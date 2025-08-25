@@ -1,14 +1,7 @@
-export interface Document {
-  name: string;
-  url: string;
-  expiryDate: string;
-  status: string;
-}
+import type { Document } from '../models/Document';
 
 export const fetchDocuments = async (): Promise<Document[]> => {
-  const response = await fetch('https://localhost:5001/api/Documents'); // replace with your deployed API URL
-  if (!response.ok) {
-    throw new Error('Failed to fetch documents');
-  }
-  return response.json();
+  const res = await fetch('http://localhost:5000/api/documents');
+  if (!res.ok) throw new Error('Failed to fetch documents');
+  return res.json();
 };
