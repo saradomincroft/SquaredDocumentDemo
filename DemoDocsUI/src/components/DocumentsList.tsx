@@ -1,4 +1,3 @@
-// src/components/DocumentsList.tsx
 import { useEffect, useState } from "react";
 import "./DocumentsList.css";
 import type { Document } from "../types/Document";
@@ -16,44 +15,43 @@ const DocumentsList = () => {
     getAllDocuments()
       .then((docs) => {
         setDocuments(docs);
-        setFilteredDocs(docs);
       })
       .catch((err) => setError(err.message));
   }, []);
 
   useEffect(() => {
-    let updatedDocs = [...documents];
     const now = new Date();
+    const lowerSearch = searchTerm.trim().toLowerCase();
 
-    updatedDocs = updatedDocs.filter((doc) => {
+    // Filter + search combined
+    const updatedDocs = documents.filter((doc) => {
       const expiry = new Date(doc.expiryDate);
       const daysLeft = Math.ceil((expiry.getTime() - now.getTime()) / 86400000);
 
-      // Apply filter
-      if (filter === "active" && expiry >= now && daysLeft > 7) return true;
-      if (filter === "near-expiry" && expiry >= now && daysLeft <= 7) return true;
-      if (filter === "expired" && expiry < now) return true;
-      if (filter === "all") return true;
-      return false;
+      // Status filter
+      const statusMatch =
+        filter === "all" ||
+        (filter === "active" && expiry >= now && daysLeft > 7) ||
+        (filter === "near-expiry" && expiry >= now && daysLeft <= 7) ||
+        (filter === "expired" && expiry < now);
+
+      // Search filter (name or customer)
+      const searchMatch =
+        lowerSearch === "" ||
+        doc.name.toLowerCase().includes(lowerSearch) ||
+        doc.customerName.toLowerCase().includes(lowerSearch);
+
+      return statusMatch && searchMatch;
     });
 
-    // Apply search
-    if (searchTerm) {
-      updatedDocs = updatedDocs.filter(
-        (doc) =>
-          doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doc.status.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Sort by expiry
+    // Sort by expiry date
     updatedDocs.sort((a, b) => {
       const diff = new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
       return sortAsc ? diff : -diff;
     });
 
     setFilteredDocs(updatedDocs);
-  }, [filter, sortAsc, searchTerm, documents]);
+  }, [documents, filter, sortAsc, searchTerm]);
 
   if (error) return <div className="error">Error fetching documents: {error}</div>;
 
@@ -80,7 +78,7 @@ const DocumentsList = () => {
       <div className="search-filter-bar">
         <input
           type="text"
-          placeholder="Search documents..."
+          placeholder="Search documents or customer..."
           className="search-input"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -106,15 +104,14 @@ const DocumentsList = () => {
           filteredDocs.map((doc) => {
             const expiryDate = new Date(doc.expiryDate);
             return (
-              <div key={doc.name} className="card">
+              <div key={doc.name + doc.customerName} className="card">
                 <a href={doc.url} target="_blank" rel="noopener noreferrer">
                   {doc.name}
                 </a>
                 <span className={getStatusClass(expiryDate)}>{getStatusText(expiryDate)}</span>
+                <div className="card-info">Customer: {doc.customerName}</div>
                 <div className="card-info">Status: {doc.status}</div>
-                <div className="card-info">
-                  Expiry: {expiryDate.toLocaleDateString()}
-                </div>
+                <div className="card-info">Expiry: {expiryDate.toLocaleDateString()}</div>
               </div>
             );
           })
