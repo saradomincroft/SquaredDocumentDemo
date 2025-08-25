@@ -1,29 +1,31 @@
-import React, { useEffect, useState } from 'react';
-import type { Document } from '../models/Document';
-import { fetchDocuments } from '../services/documentService';
+// src/components/DocumentsList.tsx
+import React, { useEffect, useState } from "react";
+import type { Document } from "../types/Document";
+import { getAllDocuments } from "../services/DocumentService";
 
-export const DocumentList: React.FC = () => {
+const DocumentsList = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchDocuments()
-      .then(docs => setDocuments(docs))
-      .finally(() => setLoading(false));
+    getAllDocuments()
+      .then(setDocuments)
+      .catch((err) => setError(err.message));
   }, []);
 
-  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
-    <div>
-      <h2>Customer Documents</h2>
-      <ul>
-        {documents.map(doc => (
-          <li key={doc.name}>
-            <a href={doc.url} target="_blank" rel="noreferrer">{doc.name}</a> — {doc.status} — Expires: {doc.expiryDate}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul>
+      {documents.map((doc) => (
+        <li key={doc.name}>
+          <a href={doc.url} target="_blank" rel="noopener noreferrer">
+            {doc.name}
+          </a>{" "}
+          - {doc.status} - {new Date(doc.expiryDate).toLocaleDateString()}
+        </li>
+      ))}
+    </ul>
   );
 };
+export default DocumentsList;

@@ -1,10 +1,16 @@
-import React from 'react';
-import { DocumentList } from './components/DocumentsList';
+// src/App.tsx
+import React from "react";
+import DocumentsList from "./components/DocumentsList";
 
 function App() {
   return (
     <div className="App">
-      <DocumentList />
+      <header>
+        <h1>Customer Documents</h1>
+      </header>
+      <main>
+        <DocumentsList />
+      </main>
     </div>
   );
 }

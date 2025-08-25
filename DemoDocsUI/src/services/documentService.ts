@@ -1,7 +1,16 @@
-import type { Document } from '../models/Document';
+import type { Document } from "../types/Document";
 
-export const fetchDocuments = async (): Promise<Document[]> => {
-  const res = await fetch('http://localhost:5000/api/documents');
-  if (!res.ok) throw new Error('Failed to fetch documents');
+const API_BASE = "http://localhost:5080/api";
+
+export const getAllDocuments = async (): Promise<Document[]> => {
+  const res = await fetch(`${API_BASE}/documents`);
+  if (!res.ok) throw new Error("Failed to fetch documents");
+  return res.json();
+};
+
+export const getDocumentByName = async (name: string): Promise<Document | null> => {
+  const res = await fetch(`${API_BASE}/documents/${name}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("Failed to fetch document");
   return res.json();
 };
