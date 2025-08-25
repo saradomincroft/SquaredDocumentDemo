@@ -1,5 +1,5 @@
 // src/components/DocumentsList.tsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./DocumentsList.css";
 import type { Document } from "../types/Document";
 import { getAllDocuments } from "../services/DocumentService";
@@ -7,8 +7,9 @@ import { getAllDocuments } from "../services/DocumentService";
 const DocumentsList = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [filteredDocs, setFilteredDocs] = useState<Document[]>([]);
-  const [filter, setFilter] = useState<"all" | "active" | "expired">("all");
+  const [filter, setFilter] = useState<"all" | "active" | "near-expiry" | "expired">("all");
   const [sortAsc, setSortAsc] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,38 +25,77 @@ const DocumentsList = () => {
     let updatedDocs = [...documents];
     const now = new Date();
 
-    if (filter === "active") {
-      updatedDocs = updatedDocs.filter((doc) => new Date(doc.expiryDate) >= now);
-    } else if (filter === "expired") {
-      updatedDocs = updatedDocs.filter((doc) => new Date(doc.expiryDate) < now);
+    updatedDocs = updatedDocs.filter((doc) => {
+      const expiry = new Date(doc.expiryDate);
+      const daysLeft = Math.ceil((expiry.getTime() - now.getTime()) / 86400000);
+
+      // Apply filter
+      if (filter === "active" && expiry >= now && daysLeft > 7) return true;
+      if (filter === "near-expiry" && expiry >= now && daysLeft <= 7) return true;
+      if (filter === "expired" && expiry < now) return true;
+      if (filter === "all") return true;
+      return false;
+    });
+
+    // Apply search
+    if (searchTerm) {
+      updatedDocs = updatedDocs.filter(
+        (doc) =>
+          doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          doc.status.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
+    // Sort by expiry
     updatedDocs.sort((a, b) => {
       const diff = new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
       return sortAsc ? diff : -diff;
     });
 
     setFilteredDocs(updatedDocs);
-  }, [filter, sortAsc, documents]);
+  }, [filter, sortAsc, searchTerm, documents]);
 
-  if (error)
-    return <div className="error">Error fetching documents: {error}</div>;
+  if (error) return <div className="error">Error fetching documents: {error}</div>;
+
+  const getStatusClass = (expiry: Date) => {
+    const now = new Date();
+    const daysLeft = Math.ceil((expiry.getTime() - now.getTime()) / 86400000);
+    if (expiry < now) return "status expired";
+    if (daysLeft <= 7) return "status near-expiry";
+    return "status active";
+  };
+
+  const getStatusText = (expiry: Date) => {
+    const now = new Date();
+    const daysLeft = Math.ceil((expiry.getTime() - now.getTime()) / 86400000);
+    if (expiry < now) return "Expired";
+    if (daysLeft <= 7) return `Near Expiry (${daysLeft}d)`;
+    return "Active";
+  };
 
   return (
     <div className="container">
-      <h1 className="title">Customer Documents</h1>
-      <h2 className="subtitle">Documents Dashboard</h2>
+      <h1 className="title">Customer Documents Dashboard</h1>
 
-      <div className="filters">
-        {(["all", "active", "expired"] as const).map((type) => (
+      <div className="search-filter-bar">
+        <input
+          type="text"
+          placeholder="Search documents..."
+          className="search-input"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+
+        {(["all", "active", "near-expiry", "expired"] as const).map((type) => (
           <button
             key={type}
             onClick={() => setFilter(type)}
             className={`filter-button ${filter === type ? "active" : ""}`}
           >
-            {type.charAt(0).toUpperCase() + type.slice(1)}
+            {type.replace("-", " ").toUpperCase()}
           </button>
         ))}
+
         <button onClick={() => setSortAsc(!sortAsc)} className="sort-button">
           Sort by Date {sortAsc ? "↑" : "↓"}
         </button>
@@ -64,18 +104,16 @@ const DocumentsList = () => {
       <div className="cards-container">
         {filteredDocs.length > 0 ? (
           filteredDocs.map((doc) => {
-            const isExpired = new Date(doc.expiryDate) < new Date();
+            const expiryDate = new Date(doc.expiryDate);
             return (
               <div key={doc.name} className="card">
                 <a href={doc.url} target="_blank" rel="noopener noreferrer">
                   {doc.name}
                 </a>
-                <span className={`status ${isExpired ? "expired" : "active"}`}>
-                  {isExpired ? "Expired" : "Active"}
-                </span>
+                <span className={getStatusClass(expiryDate)}>{getStatusText(expiryDate)}</span>
                 <div className="card-info">Status: {doc.status}</div>
                 <div className="card-info">
-                  Expiry: {new Date(doc.expiryDate).toLocaleDateString()}
+                  Expiry: {expiryDate.toLocaleDateString()}
                 </div>
               </div>
             );
