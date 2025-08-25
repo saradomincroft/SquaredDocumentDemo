@@ -1,5 +1,6 @@
 // src/components/DocumentsList.tsx
 import React, { useEffect, useState } from "react";
+import "./DocumentsList.css";
 import type { Document } from "../types/Document";
 import { getAllDocuments } from "../services/DocumentService";
 
@@ -21,16 +22,14 @@ const DocumentsList = () => {
 
   useEffect(() => {
     let updatedDocs = [...documents];
-
-    // Filter
     const now = new Date();
+
     if (filter === "active") {
       updatedDocs = updatedDocs.filter((doc) => new Date(doc.expiryDate) >= now);
     } else if (filter === "expired") {
       updatedDocs = updatedDocs.filter((doc) => new Date(doc.expiryDate) < now);
     }
 
-    // Sort
     updatedDocs.sort((a, b) => {
       const diff = new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
       return sortAsc ? diff : -diff;
@@ -40,89 +39,51 @@ const DocumentsList = () => {
   }, [filter, sortAsc, documents]);
 
   if (error)
-    return (
-      <div className="text-red-600 font-semibold mt-4">
-        Error fetching documents: {error}
-      </div>
-    );
+    return <div className="error">Error fetching documents: {error}</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Documents</h1>
+    <div className="container">
+      <h1 className="title">Customer Documents</h1>
+      <h2 className="subtitle">Documents Dashboard</h2>
 
-      {/* Filters and Sorting */}
-      <div className="flex flex-wrap gap-4 mb-6 items-center">
-        <div className="flex gap-2">
+      <div className="filters">
+        {(["all", "active", "expired"] as const).map((type) => (
           <button
-            className={`px-4 py-2 rounded ${
-              filter === "all" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
-            }`}
-            onClick={() => setFilter("all")}
+            key={type}
+            onClick={() => setFilter(type)}
+            className={`filter-button ${filter === type ? "active" : ""}`}
           >
-            All
+            {type.charAt(0).toUpperCase() + type.slice(1)}
           </button>
-          <button
-            className={`px-4 py-2 rounded ${
-              filter === "active" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
-            }`}
-            onClick={() => setFilter("active")}
-          >
-            Active
-          </button>
-          <button
-            className={`px-4 py-2 rounded ${
-              filter === "expired" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
-            }`}
-            onClick={() => setFilter("expired")}
-          >
-            Expired
-          </button>
-        </div>
-
-        <button
-          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-          onClick={() => setSortAsc(!sortAsc)}
-        >
+        ))}
+        <button onClick={() => setSortAsc(!sortAsc)} className="sort-button">
           Sort by Date {sortAsc ? "↑" : "↓"}
         </button>
       </div>
 
-      {/* Documents List */}
-      <ul className="grid md:grid-cols-2 gap-4">
-        {filteredDocs.map((doc) => {
-          const isExpired = new Date(doc.expiryDate) < new Date();
-          return (
-            <li
-              key={doc.name}
-              className={`p-4 border rounded shadow-sm hover:shadow-md transition ${
-                isExpired ? "bg-red-50 border-red-300" : "bg-green-50 border-green-300"
-              }`}
-            >
-              <a
-                href={doc.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-blue-700 hover:underline"
-              >
-                {doc.name}
-              </a>
-              <div className="mt-1 text-sm">
-                Status:{" "}
-                <span className={isExpired ? "text-red-600" : "text-green-600"}>
-                  {doc.status}
+      <div className="cards-container">
+        {filteredDocs.length > 0 ? (
+          filteredDocs.map((doc) => {
+            const isExpired = new Date(doc.expiryDate) < new Date();
+            return (
+              <div key={doc.name} className="card">
+                <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                  {doc.name}
+                </a>
+                <span className={`status ${isExpired ? "expired" : "active"}`}>
+                  {isExpired ? "Expired" : "Active"}
                 </span>
+                <div className="card-info">Status: {doc.status}</div>
+                <div className="card-info">
+                  Expiry: {new Date(doc.expiryDate).toLocaleDateString()}
+                </div>
               </div>
-              <div className="text-sm mt-1">
-                Expiry: {new Date(doc.expiryDate).toLocaleDateString()}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-
-      {filteredDocs.length === 0 && (
-        <div className="mt-4 text-gray-500">No documents to display.</div>
-      )}
+            );
+          })
+        ) : (
+          <div className="card-info">No documents to display.</div>
+        )}
+      </div>
     </div>
   );
 };

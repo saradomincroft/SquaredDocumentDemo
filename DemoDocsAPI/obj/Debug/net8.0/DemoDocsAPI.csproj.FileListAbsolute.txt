@@ -32,3 +32,5 @@
 /Users/saracroft/Code/DemoDocsProject/DemoDocsAPI/obj/Debug/net8.0/DemoDocsAPI.pdb
 /Users/saracroft/Code/DemoDocsProject/DemoDocsAPI/obj/Debug/net8.0/DemoDocsAPI.genruntimeconfig.cache
 /Users/saracroft/Code/DemoDocsProject/DemoDocsAPI/obj/Debug/net8.0/ref/DemoDocsAPI.dll
+/Users/saracroft/Code/DemoDocsProject/DemoDocsAPI/bin/Debug/net8.0/package-lock.json
+/Users/saracroft/Code/DemoDocsProject/DemoDocsAPI/bin/Debug/net8.0/package.json
