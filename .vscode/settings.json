@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/5b44e521-e255-47a2-a5b4-63f1f5732168/resourceGroups/DemoDocsRG/providers/Microsoft.Web/sites/demodocs-api-sara",
+    "appService.deploySubpath": "DemoDocsAPI"
+}
